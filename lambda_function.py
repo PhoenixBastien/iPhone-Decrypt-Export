@@ -3,7 +3,7 @@ from iphone_backup_decrypt import EncryptedBackup, RelativePath, RelativePathsLi
 def handler(event, context):
     try:
         passphrase = 'Fall2024!'
-        backup_path = './backup'
+        backup_path = 'backup/'
         backup = EncryptedBackup(backup_directory=backup_path,
                                  passphrase=passphrase)
 
