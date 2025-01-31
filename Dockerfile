@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:latest-amd64
+FROM public.ecr.aws/lambda/python:latest
 
 # Copy requirements.txt
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
