@@ -1,11 +1,18 @@
-hash=00008030-001C050E0EBB802E # set device backup hash
-docker pull public.ecr.aws/lambda/python:latest # pull docker image
-docker stop $(docker ps -q) # stop all running containers
-docker rm $(docker ps -a -q) # remove all containers
-docker build --build-arg DEVICE_HASH=$hash -t docker-image:test . # build container
-docker run -d -p 9000:8080 docker-image:test # run new container in background
-curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}' -w '' # check if success or fail
-rm -rf ~/Library/SMS/ # remove decrypted backup in user's Library dir
-docker cp $(docker ps -q):/var/task/Library/SMS/ ~/Library/SMS/ # copy decrypted backup to user's Library dir
-rm -rf export*/ # remove export dir
-imessage-exporter -f html -c full -p ~/Library/SMS/sms.db -o export/ # export messages to html
+#!/bin/bash
+
+# set device hash string and set backup path from device hash string
+DEVICE_HASH=00008030-001C050E0EBB802E
+BACKUP_PATH="$HOME/Library/Application Support/MobileSync/Backup/$DEVICE_HASH"
+# pull python docker image
+docker pull python:latest
+# stop all running containers and force remove all unused containers
+docker stop $(docker ps -q)
+docker container prune -f
+# remove export dir
+rm -rf export
+# build image and run new container from image
+docker build --build-arg DEVICE_HASH=$DEVICE_HASH -t docker-image:test .
+docker run --rm -v ./bin:/home/phoenix/bin \
+                -v "$BACKUP_PATH":/home/phoenix/backup \
+                -v ./export:/home/phoenix/export \
+                docker-image:test
