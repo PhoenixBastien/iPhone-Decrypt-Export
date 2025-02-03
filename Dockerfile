@@ -1,17 +1,16 @@
-FROM public.ecr.aws/lambda/python:latest
+# set base image as python
+FROM python:latest
 
-# Copy requirements.txt
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
+# add user and set workdir
+RUN useradd -ms /bin/bash phoenix
+USER phoenix
+WORKDIR /home/phoenix
 
-# Install the specified packages
+# copy code and python package requirements
+COPY main.sh decrypt.py requirements.txt ./
+
+# install the specified packages
 RUN pip install -r requirements.txt
 
-# Copy function code
-COPY lambda_function.py ${LAMBDA_TASK_ROOT}
-
-# Copy backup folder using device hash
-ARG DEVICE_HASH
-COPY test/${DEVICE_HASH} ${LAMBDA_TASK_ROOT}/backup
-
-# Set the CMD to handler function
-CMD [ "lambda_function.handler" ]
+# set cmd to main.sh
+CMD ["/bin/bash", "main.sh"]
