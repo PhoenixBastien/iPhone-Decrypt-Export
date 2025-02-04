@@ -2,9 +2,10 @@
 FROM python:latest
 
 # add user and set workdir
-RUN useradd -ms /bin/bash phoenix
-USER phoenix
-WORKDIR /home/phoenix
+ARG USER
+RUN useradd -ms /bin/bash ${USER}
+USER ${USER}
+WORKDIR /home/${USER}
 
 # copy code and python package requirements
 COPY main.sh decrypt.py requirements.txt ./
