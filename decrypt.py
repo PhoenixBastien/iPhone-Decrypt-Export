@@ -3,12 +3,14 @@ from iphone_backup_decrypt import (
 )
 
 def main():
-    print('Decrypting backup...')
+    # backup_password = 'Canada!1'
+    backup_password = input('Enter backup code: ')
+    backup_path = './backup'
     try:
-        backup_code = 'Canada!1'
-        backup_path = './backup'
+        print('Decrypting backup...')
+
         backup = EncryptedBackup(backup_directory=backup_path,
-                                 passphrase=backup_code)
+                                 passphrase=backup_password)
 
         # Extract the SMS SQLite database and attachments
         backup.extract_file(relative_path=RelativePath.TEXT_MESSAGES,
@@ -16,12 +18,13 @@ def main():
         backup.extract_files(relative_paths_like=RelativePathsLike.SMS_ATTACHMENTS,
                              output_folder='.', preserve_folders=True)
 
-        # Extract WhatsApp SQLite database and attachments:
-        backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                            output_filename="./output/whatsapp.sqlite")
-        backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
-                            output_folder="./output/whatsapp",
-                            preserve_folders=False)
+        # # Extract WhatsApp SQLite database and attachments:
+        # backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
+        #                     output_filename="./output/whatsapp.sqlite")
+        # backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
+        #                     output_folder="./output/whatsapp",
+        #                     preserve_folders=False)
+        
         print('Decryption successful!')
     except Exception as error:
         print('Decryption failed!', error)
