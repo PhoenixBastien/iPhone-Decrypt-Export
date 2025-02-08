@@ -6,16 +6,17 @@ import os.path
 
 def main():
     HOME = os.path.expanduser('~')
-    # backup_password = 'Canada!1'
-    backup_password = input('Enter backup code: ')
-    backup_path = f'{HOME}/backup'
+    device_hash = input('Enter device hash: ') or '00008030-001C050E0EBB802E' # TODO
+    passphrase = input('Enter backup password: ') or 'Fall2024!' or 'Canada!1'
+    backup_path = f'/app/Backup/{device_hash}'
+
     try:
-        print('Decrypting backup...')
+        print('Decrypting messages...')
 
         backup = EncryptedBackup(backup_directory=backup_path,
-                                 passphrase=backup_password)
+                                 passphrase=passphrase)
 
-        # Extract the SMS SQLite database and attachments
+        # Extract SMS SQLite database and attachments
         backup.extract_file(relative_path=RelativePath.TEXT_MESSAGES,
                             output_filename=f'{HOME}/Library/SMS/sms.db')
         backup.extract_files(relative_paths_like=RelativePathsLike.SMS_ATTACHMENTS,
@@ -31,9 +32,23 @@ def main():
         print('Decryption successful!')
     except Exception as error:
         print('Decryption failed!', error)
+        exit(1)
     
-    cmd = f'imessage-exporter -f html -c full -p {HOME}/Library/SMS/sms.db -o {HOME}/export'
-    subprocess.run(cmd.split())
+    try:
+        print('Exporting decrypted messages...')
+
+        args = f'''imessage-exporter -f html -c full
+                    -p {HOME}/Library/SMS/sms.db
+                    -o /app/Export/{device_hash}'''.split()
+        subprocess.run(args)
+
+        print('Export successful!')
+        exit(0)
+    except Exception as error:
+        print('Export failed!', error)
+        exit(1)
+    
+    subprocess.run('sleep infinity'.split())
 
 if __name__ == '__main__':
     main()
