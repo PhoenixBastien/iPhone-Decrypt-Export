@@ -1,17 +1,35 @@
-# set base image as python
-FROM python:latest
+# use rust:alpine as builder image
+FROM rust:alpine AS builder
 
-# add user and set workdir
-ARG USER
-RUN useradd -ms /bin/bash ${USER}
-USER ${USER}
-WORKDIR /home/${USER}
+# install imessage-exporter binary
+RUN apk add libc-dev && cargo install imessage-exporter
 
-# copy code and python package requirements
-COPY main.sh decrypt.py requirements.txt ./
+# use python:alpine as base image
+FROM python:alpine
 
-# install the specified packages
-RUN pip install -r requirements.txt
+# copy imessage-exporter binary from rust image
+COPY --from=builder /usr/local/cargo/bin/imessage-exporter /usr/local/bin/
 
-# set cmd to main.sh
-CMD ["/bin/bash", "main.sh"]
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+# Install pip requirements
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
+
+# set working directory
+WORKDIR /app
+COPY . /app
+
+# imagemagick and ffmpeg are required for media conversions on non-macOS
+RUN apk update && apk add ffmpeg imagemagick
+
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
+
+# During debugging, this entry point will be overridden.
+CMD ["python", "decrypt.py"]
