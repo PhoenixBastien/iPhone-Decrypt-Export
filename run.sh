@@ -4,8 +4,6 @@
 if [ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]
 then # User is running WSL through Windows (pin of shame)
     # os=windows
-    # get windows username by calling command prompt
-    windows_user=$(cmd.exe /c echo %USERNAME%)
     # convert windows paths to wsl paths
     appdata=$(wslpath $(cmd.exe /c echo %appdata%))
     userprofile=$(wslpath $(cmd.exe /c echo %userprofile%))
