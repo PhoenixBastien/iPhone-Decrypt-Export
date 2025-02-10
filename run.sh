@@ -3,40 +3,23 @@
 # check for wsl interoperation file (only present in windows)
 if [ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]
 then # User is running WSL through Windows (pin of shame)
-    # os=windows
-    # convert windows paths to wsl paths
-    appdata=$(wslpath $(cmd.exe /c echo %appdata%))
-    userprofile=$(wslpath $(cmd.exe /c echo %userprofile%))
-    backup_root_path="$appdata/Apple Computer/MobileSync/Backup"
-    export_root_path="$userprofile/Export"
+    # get windows env variables with cmd.exe and convert paths to wsl paths
+    APPDATA=$(wslpath $(cmd.exe /c echo %APPDATA%))
+    USERPROFILE=$(wslpath $(cmd.exe /c echo %USERPROFILE%))
+    BACKUP_ROOT="$APPDATA/Apple Computer/MobileSync/Backup"
+    EXPORT_ROOT="$USERPROFILE/Export"
 else # User is a true Unix enjoyer (Mac or Linux)
-    # os=unix
-    backup_root_path="$HOME/Library/Application Support/MobileSync/Backup"
-    export_root_path="$HOME/Export"
+    BACKUP_ROOT="$HOME/Library/Application Support/MobileSync/Backup"
+    EXPORT_ROOT="$HOME/Export"
 fi
 
-# prompt user for device hash
-# hashes=($(ls "$backup_root_path"))
-# stat "$backup_root_path/$hashes" -c %n,%.19y | sed "1i Device Hash,Modified Date\n" | column -s , -t
-# PS3="Enter a number to select backup hash: "
-# select device_hash in ${hashes[@]}
-# do
-#     echo "You selected option $REPLY: $device_hash"
-#     break
-# done
-
-# external drive needs to be mounted
-# mkdir -p /mnt/d
-# sudo mount -t drvfs D: /mnt/d
-# export_root_path=/mnt/d/export
-
 # remove previous export
-rm -rf $export_root_path # for testing but should be removed
+rm -rf $EXPORT_ROOT # for testing but should be removed
 # pull docker images
 docker pull python:alpine
 docker pull rust:alpine
 # build image and run new container from image
-docker build -t imessage-image:test .
+docker build -t imessage-decrypt-export:latest .
 docker run --rm -it --name imessage-container \
-    -v "$backup_root_path":/app/Backup -v "$export_root_path":/app/Export \
-    imessage-image:test
+    -v "$BACKUP_ROOT":/app/Backup -v "$EXPORT_ROOT":/app/Export \
+    imessage-decrypt-export:latest
