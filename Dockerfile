@@ -8,7 +8,7 @@ RUN apk add libc-dev && cargo install imessage-exporter
 FROM python:alpine
 
 # copy imessage-exporter binary from rust image
-COPY --from=builder /usr/local/cargo/bin/imessage-exporter /usr/local/bin/
+COPY --from=builder /usr/local/cargo/bin/imessage-exporter /usr/local/bin
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -18,7 +18,7 @@ ENV PYTHONUNBUFFERED=1
 
 # set working directory
 WORKDIR /app
-COPY . /app
+COPY ./app /app
 
 # Install pip requirements
 RUN python -m pip install -r requirements.txt
@@ -31,4 +31,4 @@ RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /
 USER appuser
 
 # During debugging, this entry point will be overridden.
-CMD ["python", "decrypt.py"]
+CMD ["python", "app.py"]
