@@ -43,12 +43,14 @@ def main():
     HOME = os.getenv('HOME')
 
     # hashes = {
-    #     os.listdir('/app/Backup')
+    #     os.listdir('/mnt/Backup')
     # }
-    device_hash = input('Enter device hash: ') or '00008030-001C050E0EBB802E' # TODO
-    backup_path = f'/app/Backup/{device_hash}'
+    # device_hash = input('Enter device hash: ') # TODO
+    device_hash = '00008030-001C050E0EBB802E'
+    backup_path = f'/mnt/Backup/{device_hash}'
     # device_properties = get_device_properties(backup_path)
-    password = input('Enter backup password: ') or 'Fall2024!' or 'Canada!1'
+    # password = input('Enter backup password: ')
+    password = 'Fall2024!' or 'Canada!1'
 
     try:
         print('Decrypting messages...')
@@ -56,7 +58,7 @@ def main():
         # decrypt iOS backup
         backup = EncryptedBackup(backup_directory=backup_path,
                                  passphrase=password)
-        # backup = EncryptedBackup(backup_directory='/app/Backup/00008030-001C050E0EBB802E',
+        # backup = EncryptedBackup(backup_directory='/mnt/Backup/00008030-001C050E0EBB802E',
         #                          passphrase='Fall2024!')
 
         # Extract iMessage database and attachments
@@ -76,11 +78,11 @@ def main():
         # export_imessage(format='html',
         #                 copy_method='full',
         #                 db_path=f'{HOME}/Library/SMS/sms.db',
-        #                 export_path=f'/app/Export/test')
+        #                 export_path=f'/mnt/Export/test')
 
         args = f'''imessage-exporter -f html -c full
                     -p {HOME}/Library/SMS/sms.db
-                    -o /app/Export/{device_hash}'''.split()
+                    -o /mnt/Export/{device_hash}'''.split()
         
         subprocess.run(args)
         subprocess.run('sleep infinity'.split())

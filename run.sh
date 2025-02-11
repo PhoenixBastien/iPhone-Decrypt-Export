@@ -20,6 +20,5 @@ docker pull python:alpine
 docker pull rust:alpine
 # build image and run new container from image
 docker build -t imessage-decrypt-export:latest .
-docker run --rm -it --name imessage-container \
-    -v "$BACKUP_ROOT":/app/Backup -v "$EXPORT_ROOT":/app/Export \
+docker run --rm -it -v "$BACKUP_ROOT":/mnt/Backup -v "$EXPORT_ROOT":/mnt/Export \
     imessage-decrypt-export:latest
