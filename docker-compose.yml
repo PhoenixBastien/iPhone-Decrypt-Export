@@ -1,8 +1,15 @@
-version: '3.4'
-
 services:
-  imessagedecryptexport:
-    image: imessagedecryptexport
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  app:
+    image: imessage-decrypt-export:latest
+    build: .
+    tty: true
+    # environment:
+    #   - BACKUP_ROOT="$HOME/Library/Application Support/MobileSync/Backup"
+    #   - EXPORT_ROOT="$HOME/Export"
+    volumes:
+      - type: bind
+        source: $BACKUP_ROOT
+        target: /mnt/Backup
+      - type: bind
+        source: $EXPORT_ROOT
+        target: /mnt/Export
