@@ -4,6 +4,7 @@ from iphone_backup_decrypt import (
 import subprocess
 import os
 import plistlib
+import pandas as pd
 
 def extract_imessage(backup: EncryptedBackup) -> None:
     '''Extract iMessage database and attachments from backup.'''
@@ -38,6 +39,23 @@ def get_device_properties(backup_path: str) -> dict[str, str]:
 def export_imessage(format: str, copy_method: str, db_path: str, export_path: str) -> None:
     args = f'imessage-exporter -f {format} -c {copy_method} -p {db_path} -o {export_path}'.split()
     subprocess.run(args)
+
+# TODO
+def prompt_user():
+    backup_root = '/home/phoenix/Library/Application Support/MobileSync/Backup'
+    hashes = os.listdir(backup_root)
+    df = pd.DataFrame(columns=[
+        'Device Name',
+        'Last Backup Date',
+        'Phone Number',
+        'Product Name',
+        'Unique Identifier'
+    ])
+    for i, hash in enumerate(hashes):
+        backup_path = f'{backup_root}/{hash}'
+        row = get_device_properties(backup_path)
+        print(i, row)
+        df.loc[i] = row
 
 def main():
     HOME = os.getenv('HOME')
