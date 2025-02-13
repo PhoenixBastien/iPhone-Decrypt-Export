@@ -20,8 +20,15 @@ def extract_whatsapp(backup: EncryptedBackup) -> None:
     '''Extract WhatsApp database and attachments from backup.'''
     HOME = os.getenv('HOME')
     backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename=f'{HOME}/WhatsApp/ChatStorage.sqlite')
+                        output_filename=f'{HOME}/{RelativePath.WHATSAPP_MESSAGES}')
+    backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
+                        output_filename=f'{HOME}/{RelativePath.WHATSAPP_CONTACTS}')
     backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
+                         output_folder=HOME, preserve_folders=True)
+
+def extract_all(backup: EncryptedBackup) -> None:
+    HOME = os.getenv('HOME')
+    backup.extract_files(relative_paths_like=RelativePathsLike.ALL_FILES,
                          output_folder=HOME, preserve_folders=True)
     
 def get_device_properties(backup_path: str) -> dict[str, str]:
@@ -38,8 +45,15 @@ def get_device_properties(backup_path: str) -> dict[str, str]:
             ]
         }
     
-def export_imessage(format: str, copy_method: str, db_path: str, export_path: str) -> None:
-    args = f'imessage-exporter -f {format} -c {copy_method} -p {db_path} -o {export_path}'.split()
+def export_imessage(
+        format: str, copy_method: str, db_path: str, export_path: str) -> None:
+    args = [
+        'imessage-exporter',
+        '-f', format,
+        '-c', copy_method,
+        '-p', db_path,
+        '-o', export_path
+    ]
     subprocess.run(args)
 
 # # TODO
@@ -63,11 +77,14 @@ def main():
     HOME = os.getenv('HOME')
 
     # device_id = input('Enter device ID: ') # TODO
-    device_id = '00008030-001C050E0EBB802E'
+
+    # device_id, password = '00008030-001C050E0EBB802E', 'Fall2024!' # Charbel
+    device_id, password = '00008101-000D49980121001E', 'Canada!1' # Chris
     backup_path = f'/mnt/Backup/{device_id}'
+
     # device_properties = get_device_properties(backup_path)
     # password = input('Enter backup password: ')
-    password = 'Fall2024!' or 'Canada!1'
+    # password = 'Fall2024!'
 
     try:
         print('Decrypting messages...')
@@ -78,14 +95,14 @@ def main():
         # backup = EncryptedBackup(backup_directory='/mnt/Backup/00008030-001C050E0EBB802E',
         #                          passphrase='Fall2024!')
 
-        # Extract iMessage database and attachments
-        extract_imessage(backup)
+        # # Extract iMessage database and attachments
+        # extract_imessage(backup)
 
-        # # Extract WhatsApp database and attachments
-        # extract_whatsapp(backup)
+        # Extract WhatsApp database and attachments
+        extract_whatsapp(backup)
 
         # Extract all files
-        # backup.extract_files(relative_paths_like=RelativePathsLike.ALL_FILES, output_folder='ALL_FILES', preserve_folders=True)
+        # extract_all(backup)
 
         
         print('Decryption successful!')
@@ -96,16 +113,25 @@ def main():
     try:
         print('Exporting decrypted messages...')
         
-        # export_imessage(format='html',
-        #                 copy_method='full',
-        #                 db_path=f'{HOME}/Library/SMS/sms.db',
-        #                 export_path=f'/mnt/Export/test')
+        export_imessage(
+            format='html',
+            copy_method='full',
+            db_path=f'{HOME}/{RelativePath.TEXT_MESSAGES}',
+            export_path=f'/mnt/Export/test'
+        )
 
-        args = f'''imessage-exporter -f html -c full
-                    -p {HOME}/Library/SMS/sms.db
-                    -o /mnt/Export/{device_id}'''.split()
+        # args = [
+        #     'imessage-exporter',
+        #     '-f', 'html',
+        #     '-c', 'full',
+        #     '-p', f'{HOME}/{RelativePath.TEXT_MESSAGES}',
+        #     '-o', f'/mnt/Export/{device_id}'
+        # ]
+
+        # export whatsapp
+        f'wtsexporter -i -d {HOME}ChatStorage.sqlite -m {HOME}'
         
-        subprocess.run(args)
+        # subprocess.run(args)
         subprocess.run('sleep infinity'.split())
 
         print('Export successful!')
