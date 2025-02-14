@@ -6,6 +6,7 @@ import os
 import plistlib
 from tabulate import tabulate
 from pwinput import pwinput
+from datetime import datetime, timezone
 
 def extract_imessage(backup: EncryptedBackup) -> None:
     '''Extract iMessage database and attachments from backup.'''
@@ -37,8 +38,8 @@ def get_device_properties(backup_path: str) -> dict[str, str]:
             'Product Name', 'Unique Identifier']
     return {key: plist[key] for key in keys}
     
-def export_imessage(
-        format: str, copy_method: str, db_path: str, export_path: str) -> None:
+def export_imessage(format: str, copy_method: str,
+                    db_path: str,export_path: str) -> None:
     args = [
         'imessage-exporter',
         '-f', format,
@@ -50,11 +51,12 @@ def export_imessage(
 
 def select_device() -> tuple[str, str]:
     '''Prompt user to select device to backup.'''
-    hashes = os.listdir('/mnt/Backup')
+    BACKUP_MOUNT = '/mnt/Backup'
+    hashes = os.listdir(BACKUP_MOUNT)
         
     data = []
     for id in hashes:
-        backup_path = f'{'/mnt/Backup'}/{id}'
+        backup_path = f'{BACKUP_MOUNT}/{id}'
         row = get_device_properties(backup_path)
         data.append(row)
         
@@ -66,10 +68,12 @@ def select_device() -> tuple[str, str]:
 
 def main() -> None:
     HOME = os.getenv('HOME')
+    BACKUP_MOUNT = '/mnt/Backup'
+    EXPORT_MOUNT = '/mnt/Export'
 
     device_id, device_name = select_device()
     print(device_id, device_name)
-    backup_path = f'/mnt/Backup/{device_id}'
+    backup_path = f'{BACKUP_MOUNT}/{device_id}'
     password = pwinput('Enter backup password: ')
 
     try:
@@ -101,7 +105,7 @@ def main() -> None:
             format='html',
             copy_method='full',
             db_path=f'{HOME}/{RelativePath.TEXT_MESSAGES}',
-            export_path=f'/mnt/Export/{device_name}/iMessage'
+            export_path=f'{EXPORT_MOUNT}/{device_name}/iMessage'
         )
 
         # export whatsapp
