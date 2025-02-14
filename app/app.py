@@ -10,24 +10,26 @@ from datetime import datetime, timezone
 
 def extract_imessage(backup: EncryptedBackup) -> None:
     '''Extract iMessage database and attachments from backup.'''
-    HOME = os.getenv('HOME')
     backup.extract_files(relative_paths_like='Library/SMS/%',
-                         output_folder=HOME, preserve_folders=True)
+                         output_folder=os.getenv('HOME'), preserve_folders=True)
     
 def extract_whatsapp(backup: EncryptedBackup) -> None:
     '''Extract WhatsApp database and attachments from backup.'''
-    HOME = os.getenv('HOME')
     backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename=f'{HOME}/{RelativePath.WHATSAPP_MESSAGES}')
-    backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
-                        output_filename=f'{HOME}/{RelativePath.WHATSAPP_CONTACTS}')
+                        output_filename='ChatStorage.sqlite')
+    # backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
+    #                     output_filename=RelativePath.WHATSAPP_CONTACTS)
     backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
-                         output_folder=HOME, preserve_folders=True)
+                         output_folder='Attachments', preserve_folders=True)
 
-def extract_all(backup: EncryptedBackup) -> None:
-    HOME = os.getenv('HOME')
-    backup.extract_files(relative_paths_like=RelativePathsLike.ALL_FILES,
-                         output_folder=HOME, preserve_folders=True)
+# def extract_all(backup: EncryptedBackup) -> None:
+#     backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
+#                          output_filename='History.db')
+
+
+def extract_history(backup: EncryptedBackup) -> None:
+    backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
+                         output_filename='History.db')
     
 def get_device_properties(backup_path: str) -> dict[str, str]:
     '''Read properties list file to get device info.'''
@@ -59,12 +61,20 @@ def select_device() -> tuple[str, str]:
         backup_path = f'{BACKUP_MOUNT}/{id}'
         row = get_device_properties(backup_path)
         data.append(row)
-        
-    print(tabulate([row.values() for row in data], headers=list(data[0].keys()),
-                   showindex=range(1, len(hashes) + 1), tablefmt='simple_grid'))
     
-    i = int(input('Enter the row index of a device ID: ')) - 1
-    return data[i]['Unique Identifier'], data[i]['Device Name']
+    indices = range(1, len(hashes) + 1)
+    print(tabulate([row.values() for row in data], headers=list(data[0].keys()),
+                   showindex=indices, tablefmt='simple_grid'))
+    
+    try:
+        i = int(input('Enter the row index of a device ID: '))
+    except ValueError:
+        i = -1
+        
+    while i not in indices:
+        i = int(input('Index not in range. Try again: '))
+        
+    return data[i - 1]['Unique Identifier'], data[i - 1]['Device Name']
 
 def main() -> None:
     HOME = os.getenv('HOME')
@@ -72,52 +82,46 @@ def main() -> None:
     EXPORT_MOUNT = '/mnt/Export'
 
     device_id, device_name = select_device()
-    print(device_id, device_name)
+    print('You selected', device_name)
     backup_path = f'{BACKUP_MOUNT}/{device_id}'
+    os.mkdir(f'{EXPORT_MOUNT}/{device_id}')
     password = pwinput('Enter backup password: ')
 
-    try:
-        print('Decrypting messages...')
+    # decrypt iOS backup
+    backup = EncryptedBackup(backup_directory=backup_path, passphrase=password)
 
-        # decrypt iOS backup
-        backup = EncryptedBackup(backup_directory=backup_path,
-                                 passphrase=password)
-
-        # # Extract iMessage database and attachments
+    try: # extract and export imessage database and attachments
+        print('Extracting iMessage...')
         extract_imessage(backup)
+        print('Exporting iMessage...')
+        subprocess.run(f'imessage-exporter -f html -c full \
+                       -p {HOME}/{RelativePath.TEXT_MESSAGES} \
+                       -o {EXPORT_MOUNT}/{device_id}/iMessage'.split())
+        print('Success!')
+    except Exception as e:
+        print('Failure!', e)
 
-        # Extract WhatsApp database and attachments
-        # extract_whatsapp(backup)
-
-        # Extract all files
-        # extract_all(backup)
-
-        
-        print('Decryption successful!')
-    except Exception as error:
-        print('Decryption failed!', error)
-        exit(1)
+    try: # extract and export whatsapp database and attachments
+        print('Extracting WhatsApp...')
+        extract_whatsapp(backup)
+        print('Exporting WhatsApp...')
+        subprocess.run(f'wtsexporter -i -d ChatStorage.sqlite -m Attachments \
+                       -o {EXPORT_MOUNT}/{device_id}/WhatsApp'.split())
+        print('Success!')
+    except Exception as e:
+        print('Failure!', e)
     
-    try:
-        print('Exporting decrypted messages...')
-        
-        export_imessage(
-            format='html',
-            copy_method='full',
-            db_path=f'{HOME}/{RelativePath.TEXT_MESSAGES}',
-            export_path=f'{EXPORT_MOUNT}/{device_name}/iMessage'
-        )
+    try: # extract and export safari history
+        print('Extracting Safari history...')
+        extract_history(backup)
+        print('Exporting Safari history...')
+        subprocess.run(f'mkdir {EXPORT_MOUNT}/Safari && \
+                       cp History.db {EXPORT_MOUNT}/{device_id}/Safari'.split())
+        print('Success!')
+    except Exception as e:
+        print('Failure!', e)
 
-        # export whatsapp
-        # f'wtsexporter -i -d {HOME}/ChatStorage.sqlite -m {HOME}'
-        
-        subprocess.run('sleep infinity'.split())
-
-        print('Export successful!')
-        exit(0)
-    except Exception as error:
-        print('Export failed!', error)
-        exit(1)
+    subprocess.run('sleep infinity'.split())
 
 if __name__ == '__main__':
     main()
