@@ -4,15 +4,11 @@ from iphone_backup_decrypt import (
 import subprocess
 import os
 import plistlib
-# import pandas as pd
+from tabulate import tabulate
 
 def extract_imessage(backup: EncryptedBackup) -> None:
     '''Extract iMessage database and attachments from backup.'''
     HOME = os.getenv('HOME')
-    # backup.extract_file(relative_path=RelativePath.TEXT_MESSAGES,
-    #                     output_filename=f'{HOME}/Library/SMS/sms.db')
-    # backup.extract_files(relative_paths_like=RelativePathsLike.SMS_ATTACHMENTS,
-    #                      output_folder=HOME, preserve_folders=True)
     backup.extract_files(relative_paths_like='Library/SMS/%',
                          output_folder=HOME, preserve_folders=True)
     
@@ -35,15 +31,9 @@ def get_device_properties(backup_path: str) -> dict[str, str]:
     '''Read properties list file to get device info.'''
     with open(f'{backup_path}/Info.plist', 'rb') as f:
         plist = plistlib.load(f)
-        return {
-            key: plist[key] for key in [
-                'Device Name',
-                'Last Backup Date',
-                'Phone Number',
-                'Product Name',
-                'Unique Identifier'
-            ]
-        }
+
+    keys = ['Device Name', 'Last Backup Date', 'Phone Number', 'Product Name', 'Unique Identifier']
+    return {key: plist[key] for key in keys}
     
 def export_imessage(
         format: str, copy_method: str, db_path: str, export_path: str) -> None:
@@ -56,35 +46,33 @@ def export_imessage(
     ]
     subprocess.run(args)
 
-# # TODO
-# def prompt_user():
-#     backup_root = '/home/phoenix/Library/Application Support/MobileSync/Backup'
-#     ids = os.listdir(backup_root)
-#     df = pd.DataFrame(columns=[
-#         'Device Name',
-#         'Last Backup Date',
-#         'Phone Number',
-#         'Product Name',
-#         'Unique Identifier'
-#     ])
-#     for i, id in enumerate(ids):
-#         backup_path = f'{backup_root}/{id}'
-#         row = get_device_properties(backup_path)
-#         print(i, row)
-#         df.loc[i] = row
+def select_device() -> tuple[str, str]:
+    backup_root = "/home/phoenix/Library/Application Support/MobileSync/Backup"
+    hashes = os.listdir(backup_root)
+        
+    data = []
+    for id in hashes:
+        backup_path = f'{backup_root}/{id}'
+        row = get_device_properties(backup_path)
+        data.append(row)
+        
+    print(tabulate([row.values() for row in data], headers=list(data[0].keys()),
+                   showindex=range(1, len(hashes) + 1), tablefmt='simple_grid'))
+    
+    i = int(input('Enter the row index of a device ID: ')) - 1
+    return data[i]['Unique Identifier'], data[i]['Device Name']
 
 def main():
     HOME = os.getenv('HOME')
 
-    # device_id = input('Enter device ID: ') # TODO
+    device_id, device_name = select_device()
 
-    # device_id, password = '00008030-001C050E0EBB802E', 'Fall2024!' # Charbel
-    device_id, password = '00008101-000D49980121001E', 'Canada!1' # Chris
+    device_id, password = '00008030-001C050E0EBB802E', 'Fall2024!' # Charbel
+    # device_id, password = '00008101-000D49980121001E', 'Canada!1' # Chris
     backup_path = f'/mnt/Backup/{device_id}'
 
     # device_properties = get_device_properties(backup_path)
     # password = input('Enter backup password: ')
-    # password = 'Fall2024!'
 
     try:
         print('Decrypting messages...')
@@ -92,8 +80,6 @@ def main():
         # decrypt iOS backup
         backup = EncryptedBackup(backup_directory=backup_path,
                                  passphrase=password)
-        # backup = EncryptedBackup(backup_directory='/mnt/Backup/00008030-001C050E0EBB802E',
-        #                          passphrase='Fall2024!')
 
         # # Extract iMessage database and attachments
         # extract_imessage(backup)
@@ -117,21 +103,12 @@ def main():
             format='html',
             copy_method='full',
             db_path=f'{HOME}/{RelativePath.TEXT_MESSAGES}',
-            export_path=f'/mnt/Export/test'
+            export_path=f'/mnt/Export/{device_id}'
         )
 
-        # args = [
-        #     'imessage-exporter',
-        #     '-f', 'html',
-        #     '-c', 'full',
-        #     '-p', f'{HOME}/{RelativePath.TEXT_MESSAGES}',
-        #     '-o', f'/mnt/Export/{device_id}'
-        # ]
-
         # export whatsapp
-        f'wtsexporter -i -d {HOME}ChatStorage.sqlite -m {HOME}'
+        # f'wtsexporter -i -d {HOME}/ChatStorage.sqlite -m {HOME}'
         
-        # subprocess.run(args)
         subprocess.run('sleep infinity'.split())
 
         print('Export successful!')

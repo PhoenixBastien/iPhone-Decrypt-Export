@@ -1,3 +1,4 @@
 fastpbkdf2
 iphone_backup_decrypt
 whatsapp-chat-exporter
+tabulate
