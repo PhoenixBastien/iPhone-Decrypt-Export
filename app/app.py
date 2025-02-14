@@ -5,6 +5,7 @@ import subprocess
 import os
 import plistlib
 from tabulate import tabulate
+from pwinput import pwinput
 
 def extract_imessage(backup: EncryptedBackup) -> None:
     '''Extract iMessage database and attachments from backup.'''
@@ -32,7 +33,8 @@ def get_device_properties(backup_path: str) -> dict[str, str]:
     with open(f'{backup_path}/Info.plist', 'rb') as f:
         plist = plistlib.load(f)
 
-    keys = ['Device Name', 'Last Backup Date', 'Phone Number', 'Product Name', 'Unique Identifier']
+    keys = ['Device Name', 'Last Backup Date', 'Phone Number',
+            'Product Name', 'Unique Identifier']
     return {key: plist[key] for key in keys}
     
 def export_imessage(
@@ -47,12 +49,12 @@ def export_imessage(
     subprocess.run(args)
 
 def select_device() -> tuple[str, str]:
-    backup_root = "/home/phoenix/Library/Application Support/MobileSync/Backup"
-    hashes = os.listdir(backup_root)
+    '''Prompt user to select device to backup.'''
+    hashes = os.listdir('/mnt/Backup')
         
     data = []
     for id in hashes:
-        backup_path = f'{backup_root}/{id}'
+        backup_path = f'{'/mnt/Backup'}/{id}'
         row = get_device_properties(backup_path)
         data.append(row)
         
@@ -62,17 +64,13 @@ def select_device() -> tuple[str, str]:
     i = int(input('Enter the row index of a device ID: ')) - 1
     return data[i]['Unique Identifier'], data[i]['Device Name']
 
-def main():
+def main() -> None:
     HOME = os.getenv('HOME')
 
     device_id, device_name = select_device()
-
-    device_id, password = '00008030-001C050E0EBB802E', 'Fall2024!' # Charbel
-    # device_id, password = '00008101-000D49980121001E', 'Canada!1' # Chris
+    print(device_id, device_name)
     backup_path = f'/mnt/Backup/{device_id}'
-
-    # device_properties = get_device_properties(backup_path)
-    # password = input('Enter backup password: ')
+    password = pwinput('Enter backup password: ')
 
     try:
         print('Decrypting messages...')
