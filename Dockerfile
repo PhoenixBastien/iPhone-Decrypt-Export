@@ -27,8 +27,8 @@ RUN python -m pip install -r requirements.txt
 RUN apk update && apk add ffmpeg imagemagick imagemagick-heic
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
-# RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
-# USER appuser
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
 
 # During debugging, this entry point will be overridden.
 CMD ["python", "app.py"]
