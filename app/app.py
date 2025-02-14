@@ -55,6 +55,10 @@ def select_device() -> tuple[str, str]:
     '''Prompt user to select device to backup.'''
     BACKUP_MOUNT = '/mnt/Backup'
     hashes = os.listdir(BACKUP_MOUNT)
+
+    if len(hashes) == 0:
+        print('There are no backups available.')
+        quit()
         
     data = []
     for id in hashes:
@@ -80,7 +84,7 @@ def main() -> None:
     HOME = os.getenv('HOME')
     BACKUP_MOUNT = '/mnt/Backup'
     EXPORT_MOUNT = '/mnt/Export'
-
+    
     device_id, device_name = select_device()
     print('You selected', device_name)
     backup_path = f'{BACKUP_MOUNT}/{device_id}'
