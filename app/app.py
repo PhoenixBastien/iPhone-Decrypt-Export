@@ -80,10 +80,10 @@ def main() -> None:
                                  passphrase=password)
 
         # # Extract iMessage database and attachments
-        # extract_imessage(backup)
+        extract_imessage(backup)
 
         # Extract WhatsApp database and attachments
-        extract_whatsapp(backup)
+        # extract_whatsapp(backup)
 
         # Extract all files
         # extract_all(backup)
@@ -101,7 +101,7 @@ def main() -> None:
             format='html',
             copy_method='full',
             db_path=f'{HOME}/{RelativePath.TEXT_MESSAGES}',
-            export_path=f'/mnt/Export/{device_id}'
+            export_path=f'/mnt/Export/{device_name}/iMessage'
         )
 
         # export whatsapp
