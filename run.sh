@@ -5,15 +5,17 @@ if [ ! -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]
 then # user is a true unix enjoyer (mac or linux)
     # get local backup root path
     BACKUP_ROOT="$HOME/Library/Application Support/MobileSync/Backup"
+    EXPORT_ROOT="$HOME/Export"
 else # user is running wsl through windows (pin of shame)
     # get windows home dir with powershell and convert to wsl path without '\r'
-    HOME=$(wslpath $(powershell.exe '$HOME') | tr -d '\r')
+    # HOME=$(wslpath $(powershell.exe '$HOME') | tr -d '\r')
+    # HOME=/mnt/c/Users/PS_ENG
     # get local backup root path
-    BACKUP_ROOT="$HOME/AppData/Roaming/Apple Computer/MobileSync/Backup"
+    USERPROFILE=$(wslpath $(powershell.exe '$HOME') | tr -d '\r')
+    BACKUP_ROOT="$USERPROFILE/AppData/Roaming/Apple Computer/MobileSync/Backup"
+    EXPORT_ROOT="$USERPROFILE/Export"
 fi
 
-# get local export root path
-EXPORT_ROOT="$HOME/Export"
 # remove previous export (for testing but should be removed)
 rm -rf $EXPORT_ROOT
 
