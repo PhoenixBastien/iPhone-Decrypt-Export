@@ -3,9 +3,9 @@ services:
     image: imessage-decrypt-export:latest
     build: .
     tty: true
-    # environment:
-    #   - BACKUP_ROOT="$HOME/Library/Application Support/MobileSync/Backup"
-    #   - EXPORT_ROOT="$HOME/Export"
+    environment:
+      - BACKUP_ROOT="$HOME/Library/Application Support/MobileSync/Backup"
+      - EXPORT_ROOT="$HOME/Export"
     volumes:
       - type: bind
         source: $BACKUP_ROOT
