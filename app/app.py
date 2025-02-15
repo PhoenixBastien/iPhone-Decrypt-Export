@@ -1,12 +1,14 @@
-from iphone_backup_decrypt import (
-    EncryptedBackup, RelativePath, RelativePathsLike, MatchFiles
-)
-import subprocess
 import os
 import plistlib
-from tabulate import tabulate
+import shlex
+import subprocess
+
+from iphone_backup_decrypt import (EncryptedBackup, MatchFiles, RelativePath,
+                                   RelativePathsLike)
 from pwinput import pwinput
-from datetime import datetime, timezone
+from tabulate import tabulate
+
+# from datetime import datetime, timezone
 
 def extract_imessage(backup: EncryptedBackup) -> None:
     '''Extract iMessage database and attachments from backup.'''
@@ -16,20 +18,15 @@ def extract_imessage(backup: EncryptedBackup) -> None:
 def extract_whatsapp(backup: EncryptedBackup) -> None:
     '''Extract WhatsApp database and attachments from backup.'''
     backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename='ChatStorage.sqlite')
+                        output_filename='./ChatStorage.sqlite')
     # backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
     #                     output_filename=RelativePath.WHATSAPP_CONTACTS)
     backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
-                         output_folder='Attachments', preserve_folders=True)
-
-# def extract_all(backup: EncryptedBackup) -> None:
-#     backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
-#                          output_filename='History.db')
-
+                         output_folder='./Attachments', preserve_folders=True)
 
 def extract_history(backup: EncryptedBackup) -> None:
     backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
-                         output_filename='History.db')
+                         output_filename='./History.db')
     
 def get_device_properties(backup_path: str) -> dict[str, str]:
     '''Read properties list file to get device info.'''
@@ -39,36 +36,25 @@ def get_device_properties(backup_path: str) -> dict[str, str]:
     keys = ['Device Name', 'Last Backup Date', 'Phone Number',
             'Product Name', 'Unique Identifier']
     return {key: plist[key] for key in keys}
-    
-def export_imessage(format: str, copy_method: str,
-                    db_path: str,export_path: str) -> None:
-    args = [
-        'imessage-exporter',
-        '-f', format,
-        '-c', copy_method,
-        '-p', db_path,
-        '-o', export_path
-    ]
-    subprocess.run(args)
 
 def select_device() -> tuple[str, str]:
     '''Prompt user to select device to backup.'''
-    BACKUP_MOUNT = '/mnt/Backup'
-    hashes = os.listdir(BACKUP_MOUNT)
+    hashes = os.listdir('/mnt/Backup')
 
     if len(hashes) == 0:
         print('There are no backups available.')
         quit()
         
-    data = []
-    for id in hashes:
-        backup_path = f'{BACKUP_MOUNT}/{id}'
-        row = get_device_properties(backup_path)
-        data.append(row)
+    data = [
+        get_device_properties(f'/mnt/Backup/{hash}')
+        for hash in hashes
+    ]
     
-    indices = range(1, len(hashes) + 1)
-    print(tabulate([row.values() for row in data], headers=list(data[0].keys()),
-                   showindex=indices, tablefmt='simple_grid'))
+    indices = range(1, len(data) + 1)
+    print(tabulate([row.values() for row in data],
+                   headers=list(data[0].keys()),
+                   showindex=indices,
+                   tablefmt='simple_grid'))
     
     try:
         i = int(input('Enter the row index of a device ID: '))
@@ -80,15 +66,12 @@ def select_device() -> tuple[str, str]:
         
     return data[i - 1]['Unique Identifier'], data[i - 1]['Device Name']
 
-def main() -> None:
-    HOME = os.getenv('HOME')
-    BACKUP_MOUNT = '/mnt/Backup'
-    EXPORT_MOUNT = '/mnt/Export'
-    
+def main() -> None:  
     device_id, device_name = select_device()
     print('You selected', device_name)
-    backup_path = f'{BACKUP_MOUNT}/{device_id}'
-    os.mkdir(f'{EXPORT_MOUNT}/{device_id}')
+    backup_path = f'/mnt/Backup/{device_id}'
+    export_path = f'/mnt/Export/{device_id}'
+    os.mkdir(export_path)
     password = pwinput('Enter backup password: ')
 
     # decrypt iOS backup
@@ -97,35 +80,48 @@ def main() -> None:
     try: # extract and export imessage database and attachments
         print('Extracting iMessage...')
         extract_imessage(backup)
+        
         print('Exporting iMessage...')
-        subprocess.run(f'imessage-exporter -f html -c full \
-                       -p {HOME}/{RelativePath.TEXT_MESSAGES} \
-                       -o {EXPORT_MOUNT}/{device_id}/iMessage'.split())
-        print('Success!')
+        args = shlex.split(f'imessage-exporter \
+                           -f html \
+                           -c full \
+                           -p {os.getenv('HOME')}/{RelativePath.TEXT_MESSAGES} \
+                           -o {export_path}/iMessage')
+        subprocess.run(args)
     except Exception as e:
         print('Failure!', e)
+    else:
+        print('Success!')
 
     try: # extract and export whatsapp database and attachments
         print('Extracting WhatsApp...')
         extract_whatsapp(backup)
+
         print('Exporting WhatsApp...')
-        subprocess.run(f'wtsexporter -i -d ChatStorage.sqlite -m Attachments \
-                       -o {EXPORT_MOUNT}/{device_id}/WhatsApp'.split())
-        print('Success!')
+        args = shlex.split(f'wtsexporter -i \
+                           -d ChatStorage.sqlite \
+                           -m Attachments \
+                           -o {export_path}/WhatsApp')
+        subprocess.run(args)
     except Exception as e:
         print('Failure!', e)
+    else:
+        print('Success!')
     
     try: # extract and export safari history
         print('Extracting Safari history...')
         extract_history(backup)
+
         print('Exporting Safari history...')
-        subprocess.run(f'mkdir {EXPORT_MOUNT}/Safari && \
-                       cp History.db {EXPORT_MOUNT}/{device_id}/Safari'.split())
-        print('Success!')
+        args = shlex.split(f'mkdir -p {export_path}/Safari && \
+                           cp History.db {export_path}/Safari')
+        subprocess.run(args)
     except Exception as e:
         print('Failure!', e)
+    else:
+        print('Success!')
 
-    subprocess.run('sleep infinity'.split())
+    subprocess.run(shlex.split('sleep infinity'))
 
 if __name__ == '__main__':
     main()
