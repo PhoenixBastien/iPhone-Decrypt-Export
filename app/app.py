@@ -77,7 +77,7 @@ def extract_history(backup: EncryptedBackup) -> None:
     backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
                          output_filename='./History.db')
 
-def export_history() -> None:
+def export_history(export_path: str) -> None:
     '''Export Safari history to CSV.'''
     con = sqlite3.connect('History.db')
     cur = con.cursor()
@@ -91,7 +91,7 @@ def export_history() -> None:
         ON v.history_item = i.id'
     )
 
-    with open('/mnt/Export/History.csv', 'w', newline='') as f:
+    with open(f'{export_path}/Safari History.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(('Visit Time', 'Title', 'URL', 'Visit Count'))
         writer.writerows(res.fetchall())
@@ -150,7 +150,7 @@ def main() -> None:
         extract_history(backup)
 
         print('Exporting Safari history...')
-        export_history()
+        export_history(export_path=export_path)
     except Exception as e:
         print('Failure!', e)
     else:
