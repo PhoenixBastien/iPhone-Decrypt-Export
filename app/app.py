@@ -156,7 +156,7 @@ def main() -> None:
     else:
         print('Success!')
 
-    subprocess.run(shlex.split('sleep infinity'))
+    # subprocess.run(shlex.split('sleep infinity'))
 
 if __name__ == '__main__':
     main()
