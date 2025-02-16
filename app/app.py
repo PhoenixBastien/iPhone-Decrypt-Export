@@ -1,3 +1,4 @@
+import csv
 import os
 import plistlib
 import shlex
@@ -8,24 +9,6 @@ from iphone_backup_decrypt import EncryptedBackup, MatchFiles, RelativePath
 from pwinput import pwinput
 from tabulate import tabulate
 
-
-def extract_imessage(backup: EncryptedBackup) -> None:
-    '''Extract iMessage database and attachments from encrypted backup.'''
-    backup.extract_files(relative_paths_like='Library/SMS/%',
-                         output_folder=os.getenv('HOME'), preserve_folders=True)
-    
-def extract_whatsapp(backup: EncryptedBackup) -> None:
-    '''Extract WhatsApp database and attachments from encrypted backup.'''
-    backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename='./ChatStorage.sqlite')
-    backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
-                         output_folder='./Attachments', preserve_folders=True)
-
-def extract_history(backup: EncryptedBackup) -> None:
-    '''Extract Safari history from encrypted backup.'''
-    backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
-                         output_filename='./History.db')
-    
 def get_device_info(backup_path: str) -> dict[str, str]:
     '''Read properties list file to get device info.'''
     with open(f'{backup_path}/Info.plist', 'rb') as f:
@@ -76,6 +59,44 @@ def select_device() -> tuple[str, str]:
         i = int(input('Index not in range! Try again: '))
         
     return dict(zip(headers, data[i - 1]))
+
+def extract_imessage(backup: EncryptedBackup) -> None:
+    '''Extract iMessage database and attachments from encrypted backup.'''
+    backup.extract_files(relative_paths_like='Library/SMS/%',
+                         output_folder=os.getenv('HOME'), preserve_folders=True)
+    
+def extract_whatsapp(backup: EncryptedBackup) -> None:
+    '''Extract WhatsApp database and attachments from encrypted backup.'''
+    backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
+                        output_filename='./ChatStorage.sqlite')
+    backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
+                         output_folder='./Attachments', preserve_folders=True)
+
+def extract_history(backup: EncryptedBackup) -> None:
+    '''Extract Safari history from encrypted backup.'''
+    backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
+                         output_filename='./History.db')
+
+def export_history() -> None:
+    '''Export Safari history to CSV.'''
+    con = sqlite3.connect('History.db')
+    cur = con.cursor()
+    res = cur.execute(
+        'SELECT \
+            DATETIME(v.visit_time + 978307200, "unixepoch", "localtime"), \
+            v.title, \
+            i.url, \
+            i.visit_count \
+        FROM history_items AS i JOIN history_visits AS v \
+        ON v.history_item = i.id'
+    )
+
+    with open('/mnt/Export/History.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(('Visit Time', 'Title', 'URL', 'Visit Count'))
+        writer.writerows(res.fetchall())
+        
+    con.close()
 
 def main() -> None:  
     device_info = select_device()
@@ -129,13 +150,7 @@ def main() -> None:
         extract_history(backup)
 
         print('Exporting Safari history...')
-        args = shlex.split(f'cp History.db {export_path}')
-        subprocess.run(args)
-        con = sqlite3.connect('History.db')
-        cur = con.cursor()
-        res = cur.execute('SELECT v.visit_time, i.url \
-                          FROM history_items i JOIN history_visits v \
-                          ON v.history_item = i.id')
+        export_history()
     except Exception as e:
         print('Failure!', e)
     else:
