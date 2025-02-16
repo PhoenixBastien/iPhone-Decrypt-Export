@@ -1,80 +1,96 @@
 import os
 import plistlib
 import shlex
+import sqlite3
 import subprocess
-
-from iphone_backup_decrypt import (EncryptedBackup, MatchFiles, RelativePath,
-                                   RelativePathsLike)
+from glob import glob
+from iphone_backup_decrypt import EncryptedBackup, MatchFiles, RelativePath
 from pwinput import pwinput
 from tabulate import tabulate
 
-# from datetime import datetime, timezone
 
 def extract_imessage(backup: EncryptedBackup) -> None:
-    '''Extract iMessage database and attachments from backup.'''
+    '''Extract iMessage database and attachments from encrypted backup.'''
     backup.extract_files(relative_paths_like='Library/SMS/%',
                          output_folder=os.getenv('HOME'), preserve_folders=True)
     
 def extract_whatsapp(backup: EncryptedBackup) -> None:
-    '''Extract WhatsApp database and attachments from backup.'''
+    '''Extract WhatsApp database and attachments from encrypted backup.'''
     backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
                         output_filename='./ChatStorage.sqlite')
-    # backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
-    #                     output_filename=RelativePath.WHATSAPP_CONTACTS)
     backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
                          output_folder='./Attachments', preserve_folders=True)
 
 def extract_history(backup: EncryptedBackup) -> None:
+    '''Extract Safari history from encrypted backup.'''
     backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
                          output_filename='./History.db')
     
-def get_device_properties(backup_path: str) -> dict[str, str]:
+def get_device_info(backup_path: str) -> dict[str, str]:
     '''Read properties list file to get device info.'''
     with open(f'{backup_path}/Info.plist', 'rb') as f:
-        plist = plistlib.load(f)
+        info_plist = plistlib.load(f, aware_datetime=True)
 
-    keys = ['Device Name', 'Last Backup Date', 'Phone Number',
-            'Product Name', 'Unique Identifier']
-    return {key: plist[key] for key in keys}
+    # check if backup is encrypted
+    with open(f'{backup_path}/Manifest.plist', 'rb') as f:
+        is_encrypted = plistlib.load(f)['IsEncrypted']
+
+    return (
+        info_plist['Device Name'],
+        info_plist['Last Backup Date'],
+        info_plist['Phone Number'],
+        info_plist['Product Name'],
+        info_plist['Unique Identifier'],
+        is_encrypted
+    )
 
 def select_device() -> tuple[str, str]:
     '''Prompt user to select device to backup.'''
-    hashes = os.listdir('/mnt/Backup')
+    backup_paths = glob('/mnt/Backup/' + '[0-9A-F]' * 8 + '-' + '[0-9A-F]' * 16)
 
-    if len(hashes) == 0:
-        print('There are no backups available.')
+    if len(backup_paths) == 0:
+        print('There are no backups available!')
         quit()
         
-    data = [
-        get_device_properties(f'/mnt/Backup/{hash}')
-        for hash in hashes
-    ]
-    
+    data = [get_device_info(backup_path) for backup_path in backup_paths]
+    headers = (
+        'Device Name',
+        'Last Backup Date',
+        'Phone Number',
+        'Product Name',
+        'Unique Identifier',
+        'Is Encrypted?'
+    )
     indices = range(1, len(data) + 1)
-    print(tabulate([row.values() for row in data],
-                   headers=list(data[0].keys()),
+    print(tabulate(tabular_data=data,
+                   headers=headers,
                    showindex=indices,
                    tablefmt='simple_grid'))
     
     try:
-        i = int(input('Enter the row index of a device ID: '))
+        i = int(input('Enter a row index to select a device backup: '))
     except ValueError:
         i = -1
         
     while i not in indices:
-        i = int(input('Index not in range. Try again: '))
+        i = int(input('Index not in range! Try again: '))
         
-    return data[i - 1]['Unique Identifier'], data[i - 1]['Device Name']
+    return dict(zip(headers, data[i - 1]))
 
 def main() -> None:  
-    device_id, device_name = select_device()
-    print('You selected', device_name)
+    device_info = select_device()
+    print('You selected', device_info['Device Name'])
+
+    if not device_info['Is Encrypted?']:
+        print('Device backup is not encrypted!')
+        quit()
+
+    device_id = device_info['Unique Identifier']
     backup_path = f'/mnt/Backup/{device_id}'
     export_path = f'/mnt/Export/{device_id}'
     os.mkdir(export_path)
-    password = pwinput('Enter backup password: ')
 
-    # decrypt iOS backup
+    password = pwinput('Enter backup password: ')
     backup = EncryptedBackup(backup_directory=backup_path, passphrase=password)
 
     try: # extract and export imessage database and attachments
@@ -113,9 +129,13 @@ def main() -> None:
         extract_history(backup)
 
         print('Exporting Safari history...')
-        args = shlex.split(f'mkdir -p {export_path}/Safari && \
-                           cp History.db {export_path}/Safari')
+        args = shlex.split(f'cp History.db {export_path}')
         subprocess.run(args)
+        con = sqlite3.connect('History.db')
+        cur = con.cursor()
+        res = cur.execute('SELECT v.visit_time, i.url \
+                          FROM history_items i JOIN history_visits v \
+                          ON v.history_item = i.id')
     except Exception as e:
         print('Failure!', e)
     else:
