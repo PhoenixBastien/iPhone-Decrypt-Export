@@ -6,7 +6,7 @@ import shutil
 import sqlite3
 import subprocess
 from glob import glob
-from iphone_backup_decrypt import EncryptedBackup, MatchFiles, RelativePath
+from iphone_backup_decrypt import EncryptedBackup, RelativePath, DomainLike
 from pwinput import pwinput
 from tabulate import tabulate
 
@@ -80,7 +80,7 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     
     # export imessage data with imessage-exporter binary
     subprocess.run(shlex.split(
-        f'imessage-exporter \
+        f'imessage-exporter -i \
         -f html \
         -c full \
         -p {os.getenv('HOME')}/{RelativePath.TEXT_MESSAGES} \
@@ -89,18 +89,15 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     
 def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
     '''Export WhatsApp chats to html.'''
-    # extract whatsapp database and attachments from encrypted backup
-    backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename='ChatStorage.sqlite')
-    backup.extract_files(**MatchFiles.WHATSAPP_ATTACHMENTS,
-                         output_folder='Attachments',
+    backup.extract_files(domain_like=DomainLike.WHATSAPP,
+                         output_folder='WhatsApp',
                          preserve_folders=True)
     
     # export whatsapp data with wtsexporter binary
     subprocess.run(shlex.split(
-        f'wtsexporter -i \
-        -d ChatStorage.sqlite \
-        -m Attachments \
+        f'wtsexporter -i -c \
+        -d WhatsApp/ChatStorage.sqlite \
+        -m WhatsApp \
         -o {export_path}/WhatsApp'
     ))
 
@@ -120,7 +117,8 @@ def export_history(backup: EncryptedBackup, export_path: str) -> None:
             i.url, \
             i.visit_count \
         FROM history_items AS i JOIN history_visits AS v \
-        ON v.history_item = i.id'
+        ON v.history_item = i.id \
+        ORDER BY visit_time DESC'
     )
 
     # export history data to csv file
@@ -152,18 +150,18 @@ def main() -> None:
         print('Exporting iMessage chats to HTML...')
         export_imessage(backup, export_path)
     except Exception as e:
-        print('iMessage export failed!', e)
+        print('iMessage chat export failed!', e)
     else:
-        print('WhatsApp successfully exported!')
+        print('iMessage chats successfully exported!')
 
     # extract and export whatsapp database and attachments
     try:
         print('Exporting WhatsApp chats to HTML...')
         export_whatsapp(backup, export_path)
     except Exception as e:
-        print('WhatsApp export failed!', e)
+        print('WhatsApp chat export failed!', e)
     else:
-        print('WhatsApp successfully exported!')
+        print('WhatsApp chats successfully exported!')
     
     # extract and export safari history
     try:
