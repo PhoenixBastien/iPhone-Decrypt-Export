@@ -12,9 +12,6 @@ else # user is running wsl through windows (pin of shame)
     EXPORT_ROOT="$USERPROFILE/Export"
 fi
 
-# remove previous export (for testing but should be removed)
-rm -rf $EXPORT_ROOT
-
 # pull docker images
 docker pull python:alpine
 docker pull rust:alpine
