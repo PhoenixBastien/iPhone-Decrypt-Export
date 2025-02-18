@@ -32,17 +32,23 @@ def select_device() -> tuple[str, str]:
     # get device info for all backups
     encrypted_backups = []
     for backup_path in backup_paths:
+        # skip to next iternation if not backup is not encrypted
+        with open(f'{backup_path}/Manifest.plist', 'rb') as f:
+            if not plistlib.load(f)['IsEncrypted']:
+                continue
+        
         # get device info from Info.plist
-        with open(f'{backup_path}/Info.plist', 'rb') as info_file:
-            info_plist = plistlib.load(info_file, aware_datetime=True)
+        with open(f'{backup_path}/Info.plist', 'rb') as f:
+            plist = plistlib.load(f, aware_datetime=True)
 
-        # read Manifest.plist to ensure backup is encrypted
-        with open(f'{backup_path}/Manifest.plist', 'rb') as manifest_file:
-            is_encrypted = plistlib.load(manifest_file)['IsEncrypted']
-            if is_encrypted:
-                encrypted_backups.append([
-                    info_plist[header] for header in headers
-                ])
+        # ensure last backup date is a datetime object 
+        # and convert it to string in local timezone
+        dt = plist['Last Backup Date']
+        assert isinstance(dt, datetime)
+        plist['Last Backup Date'] = dt.astimezone().strftime(r'%Y-%m-%d %H:%M')
+
+        # add device info to list of encrypted backups
+        encrypted_backups.append([plist[header] for header in headers])
     
     # quit if there are no encrypted backups available
     if len(encrypted_backups) == 0:
