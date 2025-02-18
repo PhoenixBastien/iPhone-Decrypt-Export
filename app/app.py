@@ -84,6 +84,7 @@ def select_device() -> dict[str, str]:
 
 def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     '''Export iMessage chats to html.'''
+
     # extract imessage database and attachments from encrypted backup
     backup.extract_files(
         relative_paths_like='Library/SMS/%',
@@ -174,21 +175,21 @@ def main() -> None:
 
     # extract and export imessage database and attachments
     try:
-        print('Exporting iMessage chats to HTML...')
+        print('Exporting iMessage chats to html...')
         export_imessage(backup, export_path)
     except Exception as e:
         print('iMessage chat export failed!', e)
 
     # extract and export whatsapp database and attachments
     try:
-        print('Exporting WhatsApp chats to HTML...')
+        print('Exporting WhatsApp chats to html...')
         export_whatsapp(backup, export_path)
     except Exception as e:
         print('WhatsApp chat export failed!', e)
     
     # extract and export safari history
     try:
-        print('Exporting Safari history to CSV...')
+        print('Exporting Safari history to csv...')
         export_history(backup, export_path)
     except Exception as e:
         print('Safari history export failed!', e)
