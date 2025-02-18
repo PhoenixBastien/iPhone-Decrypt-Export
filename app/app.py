@@ -161,8 +161,6 @@ def main() -> None:
         export_imessage(backup, export_path)
     except Exception as e:
         print('iMessage chat export failed!', e)
-    else:
-        print('iMessage chats successfully exported!')
 
     # extract and export whatsapp database and attachments
     try:
@@ -170,8 +168,6 @@ def main() -> None:
         export_whatsapp(backup, export_path)
     except Exception as e:
         print('WhatsApp chat export failed!', e)
-    else:
-        print('WhatsApp chats successfully exported!')
     
     # extract and export safari history
     try:
@@ -179,8 +175,6 @@ def main() -> None:
         export_history(backup, export_path)
     except Exception as e:
         print('Safari history export failed!', e)
-    else:
-        print('Safari history successfully exported!')
 
     # subprocess.run(shlex.split('sleep infinity'))
 
