@@ -86,11 +86,12 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     
     # export imessage data with imessage-exporter binary
     subprocess.run(shlex.split(
-        f'imessage-exporter -i \
-        -f html \
-        -c full \
-        -p {os.getenv('HOME')}/{RelativePath.TEXT_MESSAGES} \
-        -o {export_path}/iMessage'
+        f'imessage-exporter \
+        --use-caller-id \
+        --format html \
+        --copy-method full \
+        --db-path {os.getenv('HOME')}/{RelativePath.TEXT_MESSAGES} \
+        --export-path {export_path}/iMessage'
     ))
     
 def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
@@ -101,10 +102,13 @@ def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
     
     # export whatsapp data with wtsexporter binary
     subprocess.run(shlex.split(
-        f'wtsexporter -i -c \
-        -d WhatsApp/ChatStorage.sqlite \
-        -m WhatsApp \
-        -o {export_path}/WhatsApp'
+        f'wtsexporter \
+        --ios \
+        --move-media \
+        --no-avatar \
+        --db WhatsApp/ChatStorage.sqlite \
+        --media WhatsApp \
+        --output {export_path}/WhatsApp'
     ))
 
 def export_history(backup: EncryptedBackup, export_path: str) -> None:
