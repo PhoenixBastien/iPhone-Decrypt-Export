@@ -57,7 +57,7 @@ def select_device() -> dict[str, str]:
         print('There are no encrypted backups available!')
         quit()
     
-    # set row indices starting at 1
+    # set row indices starting at 1 based on number of encrypted backups
     indices = range(1, len(encrypted_backups) + 1)
 
     # print formatted table
@@ -68,8 +68,8 @@ def select_device() -> dict[str, str]:
         tablefmt='simple_grid'
     ))
 
-    # prompt user to select backup with valid row index in range
-    i = -1
+    # prompt user to select backup from valid row indices
+    i = 0
     while i not in indices:
         try:
             i = int(input('Enter a row index to select an encrypted backup: '))
@@ -141,7 +141,7 @@ def export_history(backup: EncryptedBackup, export_path: str) -> None:
         ON v.history_item = i.id \
         ORDER BY visit_time DESC'
     )
-
+    
     # export history data to csv file
     with open(f'{export_path}/Safari History.csv', 'w', newline='') as f:
         writer = csv.writer(f)
@@ -151,18 +151,23 @@ def export_history(backup: EncryptedBackup, export_path: str) -> None:
         con.close()
 
 def main() -> None:
+    # prompt user to select device with encrypted backup and get its info
     device_info = select_device()
-    print('You selected', device_info['Device Name'])
     device_id = device_info['Unique Identifier']
+    device_name = device_info['Device Name']
+    print('You selected', device_name)
+
+    # set backup and import paths based on selected device
     backup_path = f'/mnt/Backup/{device_id}'
     export_path = f'/mnt/Export/{device_id}'
 
-    # remove export path directory if it already exists
+    # remove export path if it already exists and make export dir
     if os.path.isdir(export_path):
         shutil.rmtree(export_path)
 
     os.mkdir(export_path)
 
+    # prompt user to input password to decrypt selected backup
     password = pwinput('Enter backup password: ')
     backup = EncryptedBackup(backup_directory=backup_path, passphrase=password)
 
