@@ -61,10 +61,12 @@ def select_device() -> dict[str, str]:
     indices = range(1, len(encrypted_backups) + 1)
 
     # print formatted table
-    print(tabulate(tabular_data=encrypted_backups,
-                   headers=headers,
-                   showindex=indices,
-                   tablefmt='simple_grid'))
+    print(tabulate(
+        tabular_data=encrypted_backups,
+        headers=headers,
+        showindex=indices,
+        tablefmt='simple_grid'
+    ))
 
     # prompt user to select backup with valid row index in range
     i = -1
@@ -82,9 +84,11 @@ def select_device() -> dict[str, str]:
 def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     '''Export iMessage chats to html.'''
     # extract imessage database and attachments from encrypted backup
-    backup.extract_files(relative_paths_like='Library/SMS/%',
-                         output_folder=os.getenv('HOME'),
-                         preserve_folders=True)
+    backup.extract_files(
+        relative_paths_like='Library/SMS/%',
+        output_folder=os.getenv('HOME'),
+        preserve_folders=True
+    )
     
     # export imessage data with imessage-exporter binary
     subprocess.run(shlex.split(
@@ -98,9 +102,12 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     
 def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
     '''Export WhatsApp chats to html.'''
-    backup.extract_files(domain_like=DomainLike.WHATSAPP,
-                         output_folder='WhatsApp',
-                         preserve_folders=True)
+
+    backup.extract_files(
+        domain_like=DomainLike.WHATSAPP,
+        output_folder='WhatsApp',
+        preserve_folders=True
+    )
     
     # export whatsapp data with wtsexporter binary
     subprocess.run(shlex.split(
@@ -116,8 +123,10 @@ def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
 def export_history(backup: EncryptedBackup, export_path: str) -> None:
     '''Export Safari history to csv.'''
     # extract history sqlite database from encrypted backup
-    backup.extract_file(relative_path=RelativePath.SAFARI_HISTORY,
-                        output_filename='History.db')
+    backup.extract_file(
+        relative_path=RelativePath.SAFARI_HISTORY,
+        output_filename='History.db'
+    )
     
     # select history data from sqlite database
     con = sqlite3.connect('History.db')
