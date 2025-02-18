@@ -10,8 +10,10 @@ from iphone_backup_decrypt import EncryptedBackup, RelativePath, DomainLike
 from pwinput import pwinput
 from tabulate import tabulate
 
-def select_device() -> tuple[str, str]:
-    '''Prompt user to select device to backup.'''
+
+def select_device() -> dict[str, str]:
+    '''Prompt user to select device with encrypted backup to export.'''
+
     # match backup path patterns
     backup_paths = glob('/mnt/Backup/' + '[0-9A-F]' * 8 + '-' + '[0-9A-F]' * 16)
 
