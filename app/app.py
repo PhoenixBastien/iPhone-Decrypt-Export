@@ -2,11 +2,12 @@ import csv
 import os
 import plistlib
 import shlex
-import shutil
 import sqlite3
 import subprocess
+from datetime import datetime
 from glob import glob
-from iphone_backup_decrypt import EncryptedBackup, RelativePath, DomainLike
+from shutil import rmtree
+from iphone_backup_decrypt import DomainLike, EncryptedBackup, RelativePath
 from pwinput import pwinput
 from tabulate import tabulate
 
@@ -122,6 +123,7 @@ def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
 
 def export_history(backup: EncryptedBackup, export_path: str) -> None:
     '''Export Safari history to csv.'''
+
     # extract history sqlite database from encrypted backup
     backup.extract_file(
         relative_path=RelativePath.SAFARI_HISTORY,
@@ -163,8 +165,7 @@ def main() -> None:
 
     # remove export path if it already exists and make export dir
     if os.path.isdir(export_path):
-        shutil.rmtree(export_path)
-
+        rmtree(export_path)
     os.mkdir(export_path)
 
     # prompt user to input password to decrypt selected backup
