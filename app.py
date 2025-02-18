@@ -194,7 +194,5 @@ def main() -> None:
     except Exception as e:
         print('Safari history export failed!', e)
 
-    # subprocess.run(shlex.split('sleep infinity'))
-
 if __name__ == '__main__':
     main()
