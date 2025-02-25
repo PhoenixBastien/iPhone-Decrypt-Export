@@ -2,34 +2,35 @@
 FROM rust:alpine AS builder
 
 # install imessage-exporter binary
-RUN apk add libc-dev && cargo install imessage-exporter
+RUN apk update && apk add libc-dev && cargo install imessage-exporter
 
 # use python:alpine as base image
 FROM python:alpine
 
+# keep python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# turn off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
 # copy imessage-exporter binary from rust image
 COPY --from=builder /usr/local/cargo/bin/imessage-exporter /usr/local/bin
 
-# imagemagick and ffmpeg are required for media conversions on non-macOS
+# install imagemagick and ffmpeg binaries for media conversions
 RUN apk update && apk add ffmpeg imagemagick imagemagick-heic
 
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE=1
+# create non-root app user
+RUN adduser --disabled-password --gecos "" appuser
 
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED=1
+# set working directory to app user's home directory
+WORKDIR /home/appuser
+COPY . .
 
-# set working directory
-WORKDIR /app
-COPY ./app /app
-
-# Install pip requirements
+# install pip requirements
 RUN python -m pip install -r requirements.txt
 
-# Creates a non-root user with an explicit UID and adds permission to access the /app folder
-RUN adduser -u 5678 --disabled-password --gecos "" appuser \
-    && chown -R appuser /app
+# set default non-root app user
 USER appuser
 
-# During debugging, this entry point will be overridden.
+# set command to be executed when running container
 CMD ["python", "app.py"]

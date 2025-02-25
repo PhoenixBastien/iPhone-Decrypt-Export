@@ -16,7 +16,9 @@ def select_device() -> dict[str, str]:
     '''Prompt user to select device with encrypted backup to export.'''
 
     # match backup path patterns
-    backup_paths = glob('/mnt/Backup/' + '[0-9A-F]' * 8 + '-' + '[0-9A-F]' * 16)
+    backup_paths = glob(
+        '/mnt/Backup/' + '[0-9A-F]' * 8 + '-' + '[0-9A-F]' * 16
+    )
 
     # quit if there are no backups available
     if len(backup_paths) == 0:
@@ -88,7 +90,7 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
     # extract imessage database and attachments from encrypted backup
     backup.extract_files(
         relative_paths_like='Library/SMS/%',
-        output_folder=os.getenv('HOME'),
+        output_folder='.',
         preserve_folders=True
     )
     
@@ -98,7 +100,7 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
         --use-caller-id \
         --format html \
         --copy-method full \
-        --db-path {os.getenv('HOME')}/{RelativePath.TEXT_MESSAGES} \
+        --db-path {RelativePath.TEXT_MESSAGES} \
         --export-path {export_path}/iMessage'
     ))
     
@@ -152,6 +154,8 @@ def export_history(backup: EncryptedBackup, export_path: str) -> None:
         writer.writerow(headers)
         writer.writerows(res.fetchall())
         con.close()
+
+    print('Done!')
 
 def main() -> None:
     # prompt user to select device with encrypted backup and get its info
