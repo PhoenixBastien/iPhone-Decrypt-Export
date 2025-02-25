@@ -12,12 +12,8 @@ else # user is running wsl through windows (pin of shame)
     EXPORT_ROOT="$USERPROFILE/Export"
 fi
 
-# pull docker images
-docker pull python:alpine
-docker pull rust:alpine
-
 # build image and run container with mounted backup and export volumes
-docker build -t imessage-decrypt-export:latest .
+docker build --pull -t imessage-decrypt-export:latest .
 docker run --rm -it \
     -v "$BACKUP_ROOT":/mnt/Backup:ro \
     -v "$EXPORT_ROOT":/mnt/Export \
