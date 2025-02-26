@@ -13,8 +13,8 @@ else # user is running wsl through windows (pin of shame)
 fi
 
 # build image and run container with mounted backup and export volumes
-docker build --pull -t imessage-decrypt-export:latest .
+docker build --pull -t ide:latest .
 docker run --rm -it \
     -v "$BACKUP_ROOT":/mnt/Backup:ro \
     -v "$EXPORT_ROOT":/mnt/Export \
-    imessage-decrypt-export:latest
+    ide:latest
