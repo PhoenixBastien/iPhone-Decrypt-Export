@@ -64,6 +64,7 @@ def select_device() -> dict[str, str]:
     indices = range(1, len(encrypted_backups) + 1)
 
     # print formatted table
+    print('These are the available encrypted backups:')
     print(tabulate(
         tabular_data=encrypted_backups,
         headers=headers,
@@ -177,26 +178,49 @@ def main() -> None:
     password = pwinput('Enter backup password: ')
     backup = EncryptedBackup(backup_directory=backup_path, passphrase=password)
 
-    # extract and export imessage database and attachments
-    try:
-        print('Exporting iMessage chats to html...')
-        export_imessage(backup, export_path)
-    except Exception as e:
-        print('iMessage chat export failed!', e)
+    # prompt user to select what will be exported
+    export_options = {
+        '1': 'iMessage chats',
+        '2': 'WhatsApp chats',
+        '3': 'Safari history',
+        '4': 'All of the above'
+    }
 
-    # extract and export whatsapp database and attachments
-    try:
-        print('Exporting WhatsApp chats to html...')
-        export_whatsapp(backup, export_path)
-    except Exception as e:
-        print('WhatsApp chat export failed!', e)
+    print('What would you like to export?')
+
+    for key, value in export_options.items():
+        print(f'{key}) {value}')
+
+    input_str = input('Enter a number to select an export option: ')
+    if input_str in export_options.keys():
+        export_choice = int(input_str)
+    else:
+        'Invalid input! Defaulting to 4) All of the above.'
+        export_choice = 4
+
+    if export_choice in {1, 4}:
+        # extract and export imessage database and attachments
+        try:
+            print('Exporting iMessage chats to html...')
+            export_imessage(backup, export_path)
+        except Exception as e:
+            print('iMessage chat export failed!', e)
+
+    if export_choice in {2, 4}:
+        # extract and export whatsapp database and attachments
+        try:
+            print('Exporting WhatsApp chats to html...')
+            export_whatsapp(backup, export_path)
+        except Exception as e:
+            print('WhatsApp chat export failed!', e)
     
-    # extract and export safari history
-    try:
-        print('Exporting Safari history to csv...')
-        export_history(backup, export_path)
-    except Exception as e:
-        print('Safari history export failed!', e)
+    if export_choice in {3, 4}:
+        # extract and export safari history
+        try:
+            print('Exporting Safari history to csv...')
+            export_history(backup, export_path)
+        except Exception as e:
+            print('Safari history export failed!', e)
 
 if __name__ == '__main__':
     main()
