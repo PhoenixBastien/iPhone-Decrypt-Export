@@ -14,7 +14,4 @@ fi
 
 # build image and run container with mounted backup and export volumes
 docker build --pull -t ide:latest .
-docker run --rm -it \
-    -v "$BACKUP_ROOT":/mnt/Backup:ro \
-    -v "$EXPORT_ROOT":/mnt/Export \
-    ide:latest
+docker run --rm -it -v "$BACKUP_ROOT":/mnt/Backup:ro -v "$EXPORT_ROOT":/mnt/Export ide:latest
