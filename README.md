@@ -4,6 +4,6 @@ This program is meant for personal use and requires device credentials. Its purp
 
 ## How to Use
 
-1. Start Docker Desktop.
-2. Run `sh run.sh` in the terminal.
+1. Start container engine (Podman or Docker).
+2. Run `./bootstrap.sh` in the terminal.
 3. Follow on-screen instructions in terminal.
