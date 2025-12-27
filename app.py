@@ -1,7 +1,6 @@
 import csv
 import os
 import plistlib
-import shlex
 import sqlite3
 import subprocess
 import sys
@@ -96,14 +95,14 @@ def export_imessage(backup: EncryptedBackup, export_path: str) -> None:
 
     # export imessage data with imessage-exporter binary
     subprocess.run(
-        shlex.split(
-            f"imessage-exporter \
-            --use-caller-id \
-            --format html \
-            --copy-method full \
-            --db-path {RelativePath.TEXT_MESSAGES} \
-            --export-path {export_path}/iMessage"
-        )
+        [
+            "imessage-exporter",
+            "--use-caller-id",
+            "--format=html",
+            "--copy-method=full",
+            "--db-path={RelativePath.TEXT_MESSAGES}",
+            "--export-path={export_path}/iMessage",
+        ]
     )
 
 
@@ -116,15 +115,15 @@ def export_whatsapp(backup: EncryptedBackup, export_path: str) -> None:
 
     # export whatsapp data with wtsexporter binary
     subprocess.run(
-        shlex.split(
-            f"wtsexporter \
-            --ios \
-            --move-media \
-            --no-avatar \
-            --db WhatsApp/ChatStorage.sqlite \
-            --media WhatsApp \
-            --output {export_path}/WhatsApp"
-        )
+        [
+            "wtsexporter",
+            "--ios",
+            "--move-media",
+            "--no-avatar",
+            "--db=WhatsApp/ChatStorage.sqlite",
+            "--media=WhatsApp",
+            "--output={export_path}/WhatsApp",
+        ]
     )
 
 
