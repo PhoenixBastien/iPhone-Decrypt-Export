@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   iphone-decrypt-export:
-    image: imessage-decrypt-export:latest
+    image: iphone-decrypt-export:latest
     build:
       context: .
     volumes:
