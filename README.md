@@ -1,6 +1,6 @@
 # iPhone Decrypt/Export
 
-This program is meant for personal use and requires device credentials. Its purpose is to decrypt an encrypted iPhone backup and export iMessage/WhatsApp chats to HTML and Safari search history to CSV. This code is compatible with macOS, Linux, and Windows (with WSL).
+This program is meant for personal use and requires device credentials. Its purpose is to decrypt an encrypted iPhone backup and export iMessage/WhatsApp chats to HTML and Safari search history to CSV. This code is compatible with macOS and Windows (with WSL).
 
 ## How to Use
 
