@@ -12,12 +12,12 @@ else
 fi
 
 # check for wsl interop file (only present in windows)
-if [[ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]]; then
+if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
     # user is using wsl through windows (pin of shame)
     USERPROFILE=$(wslpath "$(wslvar USERPROFILE)")
     BACKUP_ROOT="$USERPROFILE/AppData/Roaming/Apple Computer/MobileSync/Backup"
     EXPORT_ROOT="$USERPROFILE/Export"
-elif [[ "$OSTYPE" = "darwin"* ]]; then
+elif [[ $OSTYPE == darwin* ]]; then
     # user is using macos
     BACKUP_ROOT="$HOME/Library/Application Support/MobileSync/Backup"
     EXPORT_ROOT="$HOME/Export"
